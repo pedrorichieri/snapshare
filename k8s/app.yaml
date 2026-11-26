@@ -34,6 +34,18 @@ spec:
           envFrom:
             - secretRef:
                 name: snapshare-secrets
+          env:
+            # Métricas por OTLP al receptor nativo de Prometheus (requiere
+            # enableOTLPReceiver en el Prometheus de monitoring). Solo métricas:
+            # se usa la variable específica para no enviar trazas ahí.
+            - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+              value: http://kps-prometheus.monitoring:9090/api/v1/otlp/v1/metrics
+            - name: OTEL_EXPORTER_OTLP_METRICS_PROTOCOL
+              value: http/protobuf
+            - name: OTEL_METRIC_EXPORT_INTERVAL
+              value: "30000"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: service.namespace=pedro-snapshare,deployment.environment=prod
           # startup/readiness usan /api/health (comprueba Redis); liveness solo TCP
           # para no reiniciar la app cuando Redis falla.
           startupProbe:
