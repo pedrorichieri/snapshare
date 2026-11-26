@@ -94,6 +94,7 @@ jobs:
       - name: Apply manifests with the SHA-tagged image
         run: |
           kubectl -n "$NAMESPACE" apply -f k8s/redis-srh.yaml
+          kubectl -n "$NAMESPACE" apply -f k8s/ingress.yaml
           sed "s|IMAGE_PLACEHOLDER|${IMAGE}|g" k8s/app.yaml | kubectl -n "$NAMESPACE" apply -f -
       - name: Wait for rollout
         run: kubectl -n "$NAMESPACE" rollout status deployment/snapshare --timeout=180s

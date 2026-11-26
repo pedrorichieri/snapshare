@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: snapshare
+spec:
+  # Sin ingressClassName: usa la IngressClass por defecto del clúster.
+  rules:
+    - host: snapshare.2.31.77.236.sslip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: snapshare
+                port:
+                  number: 80
