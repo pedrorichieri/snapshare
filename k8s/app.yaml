@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snapshare
+  labels: { app: snapshare }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: snapshare }
+  template:
+    metadata:
+      labels: { app: snapshare }
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: snapshare
+          image: IMAGE_PLACEHOLDER   # replaced by the pipeline with ghcr.io/<repo>:<commit SHA>
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: snapshare-secrets
+          readinessProbe:
+            httpGet: { path: /api/health, port: 3000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /api/health, port: 3000 }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: snapshare
+spec:
+  selector: { app: snapshare }
+  ports:
+    - port: 80
+      targetPort: 3000
