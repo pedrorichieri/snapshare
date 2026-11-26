@@ -12,6 +12,8 @@ spec:
     metadata:
       labels: { app: redis }
     spec:
+      # Evita que K8s inyecte SRH_PORT=tcp://... y rompa a srh
+      enableServiceLinks: false
       containers:
         - name: redis
           image: redis:alpine
@@ -37,6 +39,8 @@ spec:
     metadata:
       labels: { app: srh }
     spec:
+      # Evita que K8s inyecte SRH_PORT=tcp://... y rompa a srh
+      enableServiceLinks: false
       containers:
         - name: srh
           image: hiett/serverless-redis-http:latest
