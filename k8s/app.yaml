@@ -4,7 +4,7 @@ metadata:
   name: snapshare
   labels: { app: snapshare }
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels: { app: snapshare }
   template:
@@ -31,8 +31,8 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
           resources:
-            requests: { cpu: 100m, memory: 128Mi }
-            limits: { memory: 512Mi }
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 250m, memory: 256Mi }
 ---
 apiVersion: v1
 kind: Service
