@@ -67,36 +67,6 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: docker-build-and-scan
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-    steps:
-      - uses: actions/checkout@v7
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-      - name: Pull Vercel environment
-        # --debug is temporary: "Could not retrieve Project Settings" is a
-        # known-misleading Vercel CLI message that actually masks a 403 from
-        # the API (vercel/vercel#10874) — this surfaces the real response so
-        # we can see which permission is actually missing, then comes out.
-        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN" --debug
-      - name: Build project artifacts
-        # VERCEL=1 explicitly, not relied-on-implicitly: next.config.ts reads
-        # it to decide whether to skip `output: standalone` (that's only for
-        # the self-hosted Docker build; Vercel's own builder breaks if it's
-        # also set). Setting it ourselves removes any doubt about whether
-        # `vercel build` forwards it the same way Vercel's hosted builds do.
-        run: vercel build --prod --token="$VERCEL_TOKEN"
-        env:
-          VERCEL: "1"
-      - name: Deploy to Vercel
-        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
-
   release-please:
     runs-on: ubuntu-latest
     needs: docker-build-and-scan
@@ -124,49 +94,3 @@ jobs:
           # and could never be merged. RELEASE_PLEASE_TOKEN is a
           # repo-scoped PAT for exactly this.
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-
-  preview-deploy:
-    runs-on: ubuntu-latest
-    needs: docker-build-and-scan
-    if: github.event_name == 'pull_request'
-    # Needed for the PR-comment step (github.rest.issues.createComment);
-    # without an explicit grant this job inherits whatever the repo/org
-    # default GITHUB_TOKEN permissions are, which can be read-only.
-    permissions:
-      pull-requests: write
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-    steps:
-      - uses: actions/checkout@v7
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-      - name: Pull Vercel environment
-        # --debug is temporary: see the same note in the deploy job.
-        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN" --debug
-      - name: Build project artifacts
-        run: vercel build --token="$VERCEL_TOKEN"
-        env:
-          VERCEL: "1"
-      - name: Deploy preview to Vercel
-        id: deploy
-        run: |
-          url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
-          {
-            echo "preview_url<<EOF"
-            echo "$url"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-      - name: Comment preview URL on PR
-        uses: actions/github-script@v9
-        env:
-          PREVIEW_URL: ${{ steps.deploy.outputs.preview_url }}
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `Preview deployment: ${process.env.PREVIEW_URL}`
-            })
