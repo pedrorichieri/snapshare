@@ -18,6 +18,13 @@ spec:
         - name: redis
           image: redis:alpine
           ports: [{ containerPort: 6379 }]
+          readinessProbe:
+            exec: { command: ["redis-cli", "ping"] }
+            periodSeconds: 5
+          livenessProbe:
+            exec: { command: ["redis-cli", "ping"] }
+            initialDelaySeconds: 10
+            periodSeconds: 10
           resources:
             requests: { cpu: 25m, memory: 32Mi }
             limits: { cpu: 100m, memory: 64Mi }
@@ -48,6 +55,13 @@ spec:
         - name: srh
           image: hiett/serverless-redis-http:latest
           ports: [{ containerPort: 80 }]
+          readinessProbe:
+            tcpSocket: { port: 80 }
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket: { port: 80 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
           resources:
             requests: { cpu: 25m, memory: 64Mi }
             limits: { cpu: 100m, memory: 128Mi }
